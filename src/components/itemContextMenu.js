@@ -6,6 +6,7 @@ import { ServerConnections } from 'lib/jellyfin-apiclient';
 
 import browser from '../scripts/browser';
 import { copy } from '../scripts/clipboard';
+import shell from '../scripts/shell';
 import dom from '../utils/dom';
 import globalize from '../lib/globalize';
 import actionsheet from './actionSheet/actionSheet';
@@ -198,6 +199,16 @@ export async function getCommands(options) {
                 id: 'download',
                 icon: 'file_download'
             });
+
+            // A shell that builds its own download URL cannot be pointed at the optimised file, so
+            // offering it there would quietly hand back the original instead.
+            if (shell.supportsDownloadUrl()) {
+                commands.push({
+                    name: globalize.translate('OptimisedDownload'),
+                    id: 'optimiseddownload',
+                    icon: 'file_download'
+                });
+            }
 
             commands.push({
                 name: globalize.translate('CopyStreamURL'),
@@ -424,6 +435,15 @@ function executeCommand(item, id, options) {
                         filename: item.Path.replace(/^.*[\\/]/, '')
                     }]);
                     getResolveFunction(getResolveFunction(resolve, id), id)();
+                });
+                break;
+            case 'optimiseddownload':
+                import('../scripts/optimisedDownloader').then(({ downloadOptimised }) => {
+                    return downloadOptimised(api, item);
+                }).catch(err => {
+                    console.error('[itemContextMenu] error downloading the optimised file', err);
+                }).finally(() => {
+                    getResolveFunction(resolve, id)();
                 });
                 break;
             case 'downloadall': {
