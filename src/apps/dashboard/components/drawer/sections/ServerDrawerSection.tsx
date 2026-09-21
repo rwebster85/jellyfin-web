@@ -22,6 +22,7 @@ import globalize from 'lib/globalize';
 const LIBRARY_PATHS = [
     '/dashboard/libraries',
     '/dashboard/libraries/display',
+    '/dashboard/libraries/downloads',
     '/dashboard/libraries/metadata',
     '/dashboard/libraries/nfo'
 ];
@@ -106,6 +107,9 @@ const ServerDrawerSection = () => {
                     </ListItemLink>
                     <ListItemLink to='/dashboard/libraries/display' sx={{ pl: 4 }}>
                         <ListItemText inset primary={globalize.translate('Display')} />
+                    </ListItemLink>
+                    <ListItemLink to='/dashboard/libraries/downloads' sx={{ pl: 4 }}>
+                        <ListItemText inset primary={globalize.translate('TabDownloads')} />
                     </ListItemLink>
                     <ListItemLink to='/dashboard/libraries/metadata' sx={{ pl: 4 }}>
                         <ListItemText inset primary={globalize.translate('LabelMetadata')} />
