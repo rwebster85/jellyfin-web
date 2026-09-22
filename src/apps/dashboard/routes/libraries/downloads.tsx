@@ -10,6 +10,8 @@ import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import DirectoryBrowser from 'components/directorybrowser/directorybrowser';
@@ -20,15 +22,15 @@ import globalize from 'lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import React, { useCallback, useEffect, useState } from 'react';
 import { type ActionFunctionArgs, Form, useActionData, useNavigation } from 'react-router-dom';
+import {
+    DOWNLOAD_CONFIG_KEY,
+    DownloadBehaviour,
+    type DownloadOptions
+} from 'scripts/downloadSettings';
 import { ActionData } from 'types/actionData';
 import { queryClient } from 'utils/query/queryClient';
 
-const CONFIG_KEY = 'downloads';
-
-interface DownloadOptions {
-    Locations: string[];
-    Qualities: string[];
-}
+const CONFIG_KEY = DOWNLOAD_CONFIG_KEY;
 
 /**
  * The quality tiers, best first. The first enabled tier is the server default - what a user who has
@@ -50,8 +52,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
 
     const newConfig: DownloadOptions = {
+        Enabled: formData.get('Enabled') !== null,
         Locations: (formData.get('Locations')?.toString() || '').split('\n').filter(location => location.length > 0),
-        Qualities: QUALITIES.filter(quality => formData.get(`${QUALITY_FIELD_PREFIX}${quality}`) !== null)
+        Qualities: QUALITIES.filter(quality => formData.get(`${QUALITY_FIELD_PREFIX}${quality}`) !== null),
+        Behaviour: formData.get('Behaviour')?.toString() === DownloadBehaviour.Substitute ?
+            DownloadBehaviour.Substitute :
+            DownloadBehaviour.SeparateAction
     };
 
     await getSystemApi(api)
@@ -75,13 +81,17 @@ export const Component = () => {
     const navigation = useNavigation();
     const actionData = useActionData() as ActionData | undefined;
     const isSubmitting = navigation.state === 'submitting';
+    const [enabled, setEnabled] = useState(false);
     const [locations, setLocations] = useState<string[]>([]);
     const [qualities, setQualities] = useState<string[]>([]);
+    const [behaviour, setBehaviour] = useState<DownloadBehaviour>(DownloadBehaviour.SeparateAction);
 
     useEffect(() => {
         if (config) {
+            setEnabled(config.Enabled === true);
             setLocations(config.Locations || []);
             setQualities(config.Qualities || []);
+            setBehaviour(config.Behaviour || DownloadBehaviour.SeparateAction);
         }
     }, [config]);
 
@@ -104,6 +114,14 @@ export const Component = () => {
     const onRemoveClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
         const path = event.currentTarget.dataset.path;
         setLocations(current => current.filter(location => location !== path));
+    }, []);
+
+    const onEnabledChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setEnabled(event.target.checked);
+    }, []);
+
+    const onBehaviourChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setBehaviour(event.target.value as DownloadBehaviour);
     }, []);
 
     const onQualityChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,59 +163,107 @@ export const Component = () => {
                             <Typography>{globalize.translate('HeaderDownloadFoldersHelp')}</Typography>
 
                             <Stack spacing={1}>
-                                <Typography variant='h2'>{globalize.translate('HeaderDownloadFolders')}</Typography>
-                                {locations.length > 0 ? (
-                                    <List disablePadding>
-                                        {locations.map(location => (
-                                            <ListItem
-                                                key={location}
-                                                disableGutters
-                                                secondaryAction={
-                                                    <IconButton
-                                                        data-path={location}
-                                                        title={globalize.translate('ButtonRemove')}
-                                                        onClick={onRemoveClick}
-                                                    >
-                                                        <Delete />
-                                                    </IconButton>
-                                                }
-                                            >
-                                                <ListItemText primary={location} />
-                                            </ListItem>
-                                        ))}
-                                    </List>
-                                ) : (
-                                    <Typography>{globalize.translate('NoDownloadFolders')}</Typography>
-                                )}
-                                <Box>
-                                    <Button variant='outlined' onClick={onAddClick}>
-                                        {globalize.translate('Add')}
-                                    </Button>
-                                </Box>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            name='Enabled'
+                                            checked={enabled}
+                                            onChange={onEnabledChange}
+                                        />
+                                    }
+                                    label={globalize.translate('EnableOptimisedDownloads')}
+                                />
+                                <Typography>{globalize.translate('EnableOptimisedDownloadsHelp')}</Typography>
                             </Stack>
 
-                            <Stack spacing={1}>
-                                <Typography variant='h2'>{globalize.translate('HeaderDownloadQualities')}</Typography>
-                                <Typography>{globalize.translate('HeaderDownloadQualitiesHelp')}</Typography>
-                                <FormGroup>
-                                    {QUALITIES.map(quality => (
-                                        <FormControlLabel
-                                            key={quality}
-                                            control={
-                                                <Checkbox
-                                                    name={`${QUALITY_FIELD_PREFIX}${quality}`}
-                                                    checked={qualities.includes(quality)}
-                                                    onChange={onQualityChange}
+                            {/*
+                              * Hidden rather than unmounted, so stored values aren't wiped.
+                              */}
+                            <Box sx={{ display: enabled ? 'block' : 'none' }}>
+                                <Stack spacing={3}>
+                                    <Stack spacing={1}>
+                                        <Typography variant='h2'>{globalize.translate('HeaderDownloadFolders')}</Typography>
+                                        {locations.length > 0 ? (
+                                            <List disablePadding>
+                                                {locations.map(location => (
+                                                    <ListItem
+                                                        key={location}
+                                                        disableGutters
+                                                        secondaryAction={
+                                                            <IconButton
+                                                                data-path={location}
+                                                                title={globalize.translate('ButtonRemove')}
+                                                                onClick={onRemoveClick}
+                                                            >
+                                                                <Delete />
+                                                            </IconButton>
+                                                        }
+                                                    >
+                                                        <ListItemText primary={location} />
+                                                    </ListItem>
+                                                ))}
+                                            </List>
+                                        ) : (
+                                            <Typography>{globalize.translate('NoDownloadFolders')}</Typography>
+                                        )}
+                                        <Box>
+                                            <Button variant='outlined' onClick={onAddClick}>
+                                                {globalize.translate('Add')}
+                                            </Button>
+                                        </Box>
+                                    </Stack>
+
+                                    <Stack spacing={1}>
+                                        <Typography variant='h2'>{globalize.translate('HeaderDownloadQualities')}</Typography>
+                                        <Typography>{globalize.translate('HeaderDownloadQualitiesHelp')}</Typography>
+                                        <FormGroup>
+                                            {QUALITIES.map(quality => (
+                                                <FormControlLabel
+                                                    key={quality}
+                                                    control={
+                                                        <Checkbox
+                                                            name={`${QUALITY_FIELD_PREFIX}${quality}`}
+                                                            checked={qualities.includes(quality)}
+                                                            onChange={onQualityChange}
+                                                        />
+                                                    }
+                                                    label={globalize.translate(`DownloadQuality${quality}`)}
                                                 />
-                                            }
-                                            label={globalize.translate(`DownloadQuality${quality}`)}
-                                        />
-                                    ))}
-                                </FormGroup>
-                                {qualities.length === 0 && (
-                                    <Alert severity='warning'>{globalize.translate('NoDownloadQualities')}</Alert>
-                                )}
-                            </Stack>
+                                            ))}
+                                        </FormGroup>
+                                        {qualities.length === 0 && (
+                                            <Alert severity='warning'>{globalize.translate('NoDownloadQualities')}</Alert>
+                                        )}
+                                    </Stack>
+
+                                    <Stack spacing={1}>
+                                        <Typography variant='h2'>{globalize.translate('HeaderDownloadBehaviour')}</Typography>
+                                        <Typography>{globalize.translate('HeaderDownloadBehaviourHelp')}</Typography>
+                                        <RadioGroup
+                                            name='Behaviour'
+                                            value={behaviour}
+                                            onChange={onBehaviourChange}
+                                        >
+                                            <FormControlLabel
+                                                value={DownloadBehaviour.SeparateAction}
+                                                control={<Radio />}
+                                                label={globalize.translate('DownloadBehaviourSeparateAction')}
+                                            />
+                                            <Typography variant='body2'>
+                                                {globalize.translate('DownloadBehaviourSeparateActionHelp')}
+                                            </Typography>
+                                            <FormControlLabel
+                                                value={DownloadBehaviour.Substitute}
+                                                control={<Radio />}
+                                                label={globalize.translate('DownloadBehaviourSubstitute')}
+                                            />
+                                            <Typography variant='body2'>
+                                                {globalize.translate('DownloadBehaviourSubstituteHelp')}
+                                            </Typography>
+                                        </RadioGroup>
+                                    </Stack>
+                                </Stack>
+                            </Box>
 
                             <input type='hidden' readOnly name='Locations' value={locations.join('\n')} />
 

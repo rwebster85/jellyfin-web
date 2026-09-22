@@ -6,6 +6,7 @@ import { ServerConnections } from 'lib/jellyfin-apiclient';
 
 import browser from '../scripts/browser';
 import { copy } from '../scripts/clipboard';
+import { getDownloadSettings, offersSeparateOptimisedAction } from '../scripts/downloadSettings';
 import shell from '../scripts/shell';
 import dom from '../utils/dom';
 import globalize from '../lib/globalize';
@@ -200,11 +201,22 @@ export async function getCommands(options) {
                 icon: 'file_download'
             });
 
-            // A shell that builds its own download URL can only reach the optimised file if it
-            // honours the flag sent with the request, and older builds ignore it and quietly return
-            // the original. So offer the action when the URL is used as given, or when the shell
-            // says it understands the flag.
-            if (shell.supportsDownloadUrl() || appHost.supports(AppFeature.OptimisedDownload)) {
+            // Read inside this branch so that a server with no interest in downloads is never asked.
+            // It is cached and shared with the dashboard page, so this is not a request per menu.
+            const downloadSettings = await getDownloadSettings(ServerConnections.getApi(item.ServerId));
+
+            // Two conditions, and they ask different things.
+            //
+            // Does the admin want a separate action at all? Under Substitute the plain Download
+            // button already serves the optimised copy.
+            //
+            // And can this client actually honour it? A shell that builds its own download URL can
+            // only reach the optimised file if it understands the flag we send; older builds ignore
+            // it and quietly return the original.
+            const offersOptimised = offersSeparateOptimisedAction(downloadSettings)
+                && (shell.supportsDownloadUrl() || appHost.supports(AppFeature.OptimisedDownload));
+
+            if (offersOptimised) {
                 commands.push({
                     name: globalize.translate('OptimisedDownload'),
                     id: 'optimiseddownload',
