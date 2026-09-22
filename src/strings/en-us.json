@@ -466,7 +466,7 @@
     "HeaderDownloadQualitiesHelp": "The quality tiers a user may choose between on their own Downloads page. Anyone who has not chosen gets the first enabled tier. These ticks decide what users may pick, not which files may be served: an item with no file at the chosen tier falls back to any other rendition it has, because the alternative is sending the full-size original.",
     "HeaderDownloadSync": "Download & Sync",
     "HeaderDownloadFolders": "Download Folders",
-    "HeaderDownloadFoldersHelp": "Folders searched for pre-made download versions. Inside each one, create a folder named exactly as the item's own folder is named, and put a video file in it. A folder holding a single video serves that file as it is. To offer two sizes instead, add ' - High' or ' - Standard' to the end of the file names. The original file is served when nothing is found.",
+    "HeaderDownloadFoldersHelp": "Folders searched for pre-made download versions. Inside each one, create a folder named exactly as the item's own folder is named, and put a video file in it. A folder holding a single video serves that file as it is. To offer two sizes instead, add ' - High' or ' - Standard' to the end of the file names. Only those two suffixes are recognised, so a file named anything else counts as untiered. The original file is served when nothing is found.",
     "HeaderDummyChapter": "Chapter Images",
     "HeaderDVR": "DVR",
     "HeaderEditImages": "Edit Images",
