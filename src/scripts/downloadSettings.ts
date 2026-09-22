@@ -4,8 +4,12 @@ import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
 import { QUERY_KEY } from 'hooks/useNamedConfiguration';
 import { queryClient } from 'utils/query/queryClient';
 
-/** The server's named configuration holding the download settings. */
-export const DOWNLOAD_CONFIG_KEY = 'downloads';
+/**
+ * The server's named configuration holding the download settings. It is also the name of the file
+ * the server stores them in - `optimised-downloads.xml` - and the last segment of
+ * `/System/Configuration/{key}`, so it has to match `DownloadConfigurationStore.StoreKey` exactly.
+ */
+export const DOWNLOAD_CONFIG_KEY = 'optimised-downloads';
 
 /**
  * Which download behaviour the server offers, mirroring the server's `DownloadBehaviour` enum.
@@ -18,11 +22,24 @@ export enum DownloadBehaviour {
     Substitute = 'Substitute'
 }
 
+/** A quality tier, mirroring the server's `DownloadTier`. */
+export interface DownloadTier {
+    /** What a user's stored choice and `DefaultTierId` point at. Empty on a tier not yet saved. */
+    Id: string;
+    /** The file name suffix this tier is matched by: `<source stem> - <Suffix>.<ext>`. */
+    Suffix: string;
+    /** The label users see. Admin-supplied, so it is never translated. */
+    Name: string;
+    Description?: string | null;
+    Enabled: boolean;
+}
+
 /** The download settings, mirroring the server's `DownloadOptions`. */
 export interface DownloadOptions {
     Enabled: boolean;
     Locations: string[];
-    Qualities: string[];
+    Tiers: DownloadTier[];
+    DefaultTierId?: string | null;
     Behaviour: DownloadBehaviour;
 }
 

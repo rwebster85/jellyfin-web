@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
+import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
@@ -13,7 +14,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
 import { useApi } from 'hooks/useApi';
-import { QUERY_KEY, setDownloadQuality, useDownloadQuality } from 'hooks/useDownloadQuality';
+import { QUERY_KEY, setDownloadTier, useDownloadTier } from 'hooks/useDownloadTier';
 import globalize from 'lib/globalize';
 import { queryClient } from 'utils/query/queryClient';
 
@@ -22,21 +23,21 @@ const FOLLOW_DEFAULT = '';
 
 export default function UserDownloadPreferences() {
     const { api } = useApi();
-    const { data: options, isPending, isError } = useDownloadQuality();
-    const [quality, setQuality] = useState<string>(FOLLOW_DEFAULT);
+    const { data: options, isPending, isError } = useDownloadTier();
+    const [tierId, setTierId] = useState<string>(FOLLOW_DEFAULT);
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
 
     useEffect(() => {
         if (options) {
             // A tier the admin has since turned off is not on the menu, so it cannot be the value.
-            const stored = options.Quality;
-            setQuality(stored && options.Qualities.includes(stored) ? stored : FOLLOW_DEFAULT);
+            const stored = options.TierId;
+            setTierId(stored && options.Tiers.some(tier => tier.Id === stored) ? stored : FOLLOW_DEFAULT);
         }
     }, [options]);
 
-    const onQualityChange = useCallback((event: SelectChangeEvent) => {
-        setQuality(event.target.value);
+    const onTierChange = useCallback((event: SelectChangeEvent) => {
+        setTierId(event.target.value);
         setIsSaved(false);
     }, []);
 
@@ -45,26 +46,27 @@ export default function UserDownloadPreferences() {
         if (!api) return;
 
         setIsSaving(true);
-        setDownloadQuality(api, quality === FOLLOW_DEFAULT ? null : quality)
+        setDownloadTier(api, tierId === FOLLOW_DEFAULT ? null : tierId)
             .then(() => {
                 setIsSaved(true);
                 return queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
             })
             .catch(err => {
-                console.error('[downloadPreferences] error saving the download quality', err);
+                console.error('[downloadPreferences] error saving the download tier', err);
             })
             .finally(() => {
                 setIsSaving(false);
             });
-    }, [api, quality]);
+    }, [api, tierId]);
 
     if (isPending) {
         return <Loading />;
     }
 
-    const enabled = options?.Qualities ?? [];
+    const tiers = options?.Tiers ?? [];
     // Nothing to choose between: one tier is the same as no tier from the user's side.
-    const hasChoice = enabled.length > 1;
+    const hasChoice = tiers.length > 1;
+    const defaultTier = tiers.find(tier => tier.Id === options?.DefaultTierId);
 
     return (
         <Page
@@ -89,7 +91,7 @@ export default function UserDownloadPreferences() {
                               * optimised copies are still served, the server just decides which.
                               */}
                             {!isError && !hasChoice && (
-                                <Alert severity='info'>{globalize.translate('DownloadQualityNoChoice')}</Alert>
+                                <Alert severity='info'>{globalize.translate('DownloadTierNoChoice')}</Alert>
                             )}
 
                             {!isError && hasChoice && (
@@ -99,32 +101,37 @@ export default function UserDownloadPreferences() {
                                     )}
 
                                     <FormControl fullWidth>
-                                        <InputLabel id='downloadQualityLabel'>
-                                            {globalize.translate('LabelDownloadQuality')}
+                                        <InputLabel id='downloadTierLabel'>
+                                            {globalize.translate('LabelDownloadTier')}
                                         </InputLabel>
                                         <Select
-                                            labelId='downloadQualityLabel'
-                                            id='downloadQuality'
-                                            value={quality}
-                                            label={globalize.translate('LabelDownloadQuality')}
-                                            onChange={onQualityChange}
+                                            labelId='downloadTierLabel'
+                                            id='downloadTier'
+                                            value={tierId}
+                                            label={globalize.translate('LabelDownloadTier')}
+                                            onChange={onTierChange}
                                         >
                                             <MenuItem value={FOLLOW_DEFAULT}>
-                                                {options?.DefaultQuality ?
-                                                    globalize.translate(
-                                                        'DownloadQualityServerDefault',
-                                                        globalize.translate(`DownloadQuality${options.DefaultQuality}`)
-                                                    ) :
-                                                    globalize.translate('DownloadQualityServerDefaultUnset')}
+                                                {defaultTier ?
+                                                    globalize.translate('DownloadTierServerDefault', defaultTier.Name) :
+                                                    globalize.translate('DownloadTierServerDefaultUnset')}
                                             </MenuItem>
-                                            {enabled.map(tier => (
-                                                <MenuItem key={tier} value={tier}>
-                                                    {globalize.translate(`DownloadQuality${tier}`)}
+                                            {/*
+                                              * Names and descriptions are the administrator's own
+                                              * words, so they are rendered as given rather than
+                                              * looked up - there is no string to translate.
+                                              */}
+                                            {tiers.map(tier => (
+                                                <MenuItem key={tier.Id} value={tier.Id}>
+                                                    <ListItemText
+                                                        primary={tier.Name}
+                                                        secondary={tier.Description || null}
+                                                    />
                                                 </MenuItem>
                                             ))}
                                         </Select>
                                         <FormHelperText>
-                                            {globalize.translate('LabelDownloadQualityHelp')}
+                                            {globalize.translate('LabelDownloadTierHelp')}
                                         </FormHelperText>
                                     </FormControl>
 

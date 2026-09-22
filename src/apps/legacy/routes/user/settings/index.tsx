@@ -9,10 +9,12 @@ import Page from 'components/Page';
 import { AppFeature } from 'constants/appFeature';
 import LinkButton from 'elements/emby-button/LinkButton';
 import { useApi } from 'hooks/useApi';
+import { useNamedConfiguration } from 'hooks/useNamedConfiguration';
 import { useQuickConnectEnabled } from 'hooks/useQuickConnect';
 import { useUsers } from 'hooks/useUsers';
 import globalize from 'lib/globalize';
 import browser from 'scripts/browser';
+import { DOWNLOAD_CONFIG_KEY, type DownloadOptions } from 'scripts/downloadSettings';
 import Dashboard from 'utils/dashboard';
 import shell from 'scripts/shell';
 import keyboardNavigation from 'scripts/keyboardNavigation';
@@ -25,6 +27,9 @@ const UserSettingsPage: FC = () => {
         isPending: isQuickConnectEnabledPending
     } = useQuickConnectEnabled();
     const { data: users } = useUsers();
+    // The named configuration is readable by any signed-in user, and shares a cache entry with the
+    // item context menu's own read of it.
+    const { data: downloadConfig } = useNamedConfiguration<DownloadOptions>(DOWNLOAD_CONFIG_KEY);
     const [ user, setUser ] = useState<UserDto>();
 
     const userId = useMemo(() => (
@@ -190,24 +195,31 @@ const UserSettingsPage: FC = () => {
                             </div>
                         </LinkButton>
 
-                        <LinkButton
-                            href={`#/mypreferencesdownloads?userId=${userId}`}
-                            className='lnkDownloadPreferences listItem-border'
-                            style={{
-                                display: 'block',
-                                margin: 0,
-                                padding: 0
-                            }}
-                        >
-                            <div className='listItem'>
-                                <span className='material-icons listItemIcon listItemIcon-transparent file_download' aria-hidden='true' />
-                                <div className='listItemBody'>
-                                    <div className='listItemBodyText'>
-                                        {globalize.translate('TabOptimisedDownloads')}
+                        {/*
+                          * Hidden entirely while the feature is off, rather than leading to a page
+                          * that can only say there is nothing to choose. The tiers are seeded, so a
+                          * server that has never enabled downloads still has some.
+                          */}
+                        {downloadConfig?.Enabled === true && (
+                            <LinkButton
+                                href={`#/mypreferencesdownloads?userId=${userId}`}
+                                className='lnkDownloadPreferences listItem-border'
+                                style={{
+                                    display: 'block',
+                                    margin: 0,
+                                    padding: 0
+                                }}
+                            >
+                                <div className='listItem'>
+                                    <span className='material-icons listItemIcon listItemIcon-transparent file_download' aria-hidden='true' />
+                                    <div className='listItemBody'>
+                                        <div className='listItemBodyText'>
+                                            {globalize.translate('TabOptimisedDownloads')}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </LinkButton>
+                            </LinkButton>
+                        )}
 
                         {appHost.supports(AppFeature.DownloadManagement) && (
                             <LinkButton
