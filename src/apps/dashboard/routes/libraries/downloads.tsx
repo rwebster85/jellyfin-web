@@ -125,8 +125,13 @@ export const Component = () => {
         if (config) {
             setEnabled(config.Enabled === true);
             setLocations(config.Locations || []);
-            setTiers(config.Tiers ?? []);
-            setDefaultTierId(config.DefaultTierId || '');
+            const stored = config.Tiers ?? [];
+
+            setTiers(stored);
+            // Run the stored default through the same rule an edit would, so a configuration whose
+            // default is missing or points at a disabled tier opens with a button selected rather
+            // than in a state the page will not let anyone save.
+            setDefaultTierId(pickDefault(stored, config.DefaultTierId || ''));
             setBehaviour(config.Behaviour || DownloadBehaviour.SeparateAction);
         }
     }, [config]);
@@ -243,8 +248,14 @@ export const Component = () => {
             return globalize.translate('DownloadTierSuffixDuplicate');
         }
 
+        // Only meaningful while there is something to be default. An administrator who has turned
+        // every tier off, or deleted them all, has nothing to pick and saves freely.
+        if (tiers.some(tier => tier.Enabled) && !defaultTierId) {
+            return globalize.translate('DownloadTierDefaultRequired');
+        }
+
         return null;
-    }, [tiers]);
+    }, [tiers, defaultTierId]);
 
     if (isConfigPending) {
         return <Loading />;

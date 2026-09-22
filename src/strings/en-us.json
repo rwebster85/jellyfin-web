@@ -292,6 +292,7 @@
     "DownloadTierNoChoice": "The server administrator has set which version of a film you receive, so there is nothing to choose here.",
     "DownloadTierServerDefault": "Server default ({0})",
     "DownloadTierServerDefaultUnset": "Server default",
+    "DownloadTierDefaultRequired": "Choose which tier users get when they have not picked one.",
     "DownloadTierSuffixDuplicate": "Two tiers have the same suffix. Each one needs its own, or only one of them can ever be served.",
     "DownloadTierSuffixRequired": "Every tier needs a suffix. It is what file names are matched on.",
     "DownloadsLoadError": "There was an error loading the download settings.",
