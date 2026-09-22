@@ -200,9 +200,11 @@ export async function getCommands(options) {
                 icon: 'file_download'
             });
 
-            // A shell that builds its own download URL cannot be pointed at the optimised file, so
-            // offering it there would quietly hand back the original instead.
-            if (shell.supportsDownloadUrl()) {
+            // A shell that builds its own download URL can only reach the optimised file if it
+            // honours the flag sent with the request, and older builds ignore it and quietly return
+            // the original. So offer the action when the URL is used as given, or when the shell
+            // says it understands the flag.
+            if (shell.supportsDownloadUrl() || appHost.supports(AppFeature.OptimisedDownload)) {
                 commands.push({
                     name: globalize.translate('OptimisedDownload'),
                     id: 'optimiseddownload',

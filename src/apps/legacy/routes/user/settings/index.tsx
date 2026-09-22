@@ -190,6 +190,25 @@ const UserSettingsPage: FC = () => {
                             </div>
                         </LinkButton>
 
+                        <LinkButton
+                            href={`#/mypreferencesdownloads?userId=${userId}`}
+                            className='lnkDownloadPreferences listItem-border'
+                            style={{
+                                display: 'block',
+                                margin: 0,
+                                padding: 0
+                            }}
+                        >
+                            <div className='listItem'>
+                                <span className='material-icons listItemIcon listItemIcon-transparent file_download' aria-hidden='true' />
+                                <div className='listItemBody'>
+                                    <div className='listItemBodyText'>
+                                        {globalize.translate('TabDownloads')}
+                                    </div>
+                                </div>
+                            </div>
+                        </LinkButton>
+
                         {appHost.supports(AppFeature.DownloadManagement) && (
                             <LinkButton
                                 onClick={shell.openDownloadManager}

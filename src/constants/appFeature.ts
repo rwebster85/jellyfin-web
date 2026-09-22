@@ -38,6 +38,8 @@ export enum AppFeature {
     NativeDvdPlayback = 'nativedvdplayback',
     /** The app supports playback of ISO files */
     NativeIsoPlayback = 'nativeisoplayback',
+    /** The app honours the `optimised` flag on a download request, rather than always fetching the item's own file */
+    OptimisedDownload = 'optimiseddownload',
     /** The app supports physical volume buttons */
     PhysicalVolumeControl = 'physicalvolumecontrol',
     /** The app supports playing remote audio */

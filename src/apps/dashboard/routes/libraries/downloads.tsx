@@ -3,6 +3,9 @@ import Delete from '@mui/icons-material/Delete';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -24,8 +27,14 @@ const CONFIG_KEY = 'downloads';
 
 interface DownloadOptions {
     Locations: string[];
-    Quality: string;
+    Qualities: string[];
 }
+
+/**
+ * The quality tiers, best first. The first enabled tier is the server default - what a user who has
+ * not chosen one for themselves gets - and a tier with no file for an item falls back to the others.
+ */
+const QUALITIES = ['High', 'Standard'];
 
 export const action = async ({ request }: ActionFunctionArgs) => {
     const api = ServerConnections.getApi();
@@ -35,7 +44,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const newConfig: DownloadOptions = {
         Locations: (formData.get('Locations')?.toString() || '').split('\n').filter(location => location.length > 0),
-        Quality: formData.get('Quality')?.toString() || 'High'
+        Qualities: QUALITIES.filter(quality => formData.get(`Quality-${quality}`) !== null)
     };
 
     await getSystemApi(api)
@@ -60,10 +69,12 @@ export const Component = () => {
     const actionData = useActionData() as ActionData | undefined;
     const isSubmitting = navigation.state === 'submitting';
     const [locations, setLocations] = useState<string[]>([]);
+    const [qualities, setQualities] = useState<string[]>([]);
 
     useEffect(() => {
         if (config) {
             setLocations(config.Locations || []);
+            setQualities(config.Qualities || []);
         }
     }, [config]);
 
@@ -86,6 +97,15 @@ export const Component = () => {
     const onRemoveClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
         const path = event.currentTarget.dataset.path;
         setLocations(current => current.filter(location => location !== path));
+    }, []);
+
+    const onQualityChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, checked } = event.target;
+        setQualities(current => (
+            checked ?
+                QUALITIES.filter(quality => quality === name || current.includes(quality)) :
+                current.filter(quality => quality !== name)
+        ));
     }, []);
 
     if (isConfigPending) {
@@ -144,8 +164,30 @@ export const Component = () => {
                                 </Box>
                             </Stack>
 
+                            <Stack spacing={1}>
+                                <Typography variant='h2'>{globalize.translate('HeaderDownloadQualities')}</Typography>
+                                <Typography>{globalize.translate('HeaderDownloadQualitiesHelp')}</Typography>
+                                <FormGroup>
+                                    {QUALITIES.map(quality => (
+                                        <FormControlLabel
+                                            key={quality}
+                                            control={
+                                                <Checkbox
+                                                    name={`Quality-${quality}`}
+                                                    checked={qualities.includes(quality)}
+                                                    onChange={onQualityChange}
+                                                />
+                                            }
+                                            label={globalize.translate(`DownloadQuality${quality}`)}
+                                        />
+                                    ))}
+                                </FormGroup>
+                                {qualities.length === 0 && (
+                                    <Alert severity='warning'>{globalize.translate('NoDownloadQualities')}</Alert>
+                                )}
+                            </Stack>
+
                             <input type='hidden' readOnly name='Locations' value={locations.join('\n')} />
-                            <input type='hidden' readOnly name='Quality' value={config.Quality || 'High'} />
 
                             <Button type='submit' size='large'>
                                 {globalize.translate('Save')}
