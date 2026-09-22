@@ -36,6 +36,13 @@ interface DownloadOptions {
  */
 const QUALITIES = ['High', 'Standard'];
 
+/**
+ * Prefixes each tier's checkbox field name. The form reads the submitted values back by these
+ * prefixed names, while the component's state holds bare tier names, so anything reading
+ * `event.target.name` has to strip this first.
+ */
+const QUALITY_FIELD_PREFIX = 'Quality-';
+
 export const action = async ({ request }: ActionFunctionArgs) => {
     const api = ServerConnections.getApi();
     if (!api) throw new Error('No Api instance available');
@@ -44,7 +51,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const newConfig: DownloadOptions = {
         Locations: (formData.get('Locations')?.toString() || '').split('\n').filter(location => location.length > 0),
-        Qualities: QUALITIES.filter(quality => formData.get(`Quality-${quality}`) !== null)
+        Qualities: QUALITIES.filter(quality => formData.get(`${QUALITY_FIELD_PREFIX}${quality}`) !== null)
     };
 
     await getSystemApi(api)
@@ -101,10 +108,15 @@ export const Component = () => {
 
     const onQualityChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const { name, checked } = event.target;
+
+        // The field name carries QUALITY_FIELD_PREFIX; the state holds bare tier names. Comparing
+        // the two directly never matches, which left both ticking and unticking doing nothing.
+        const changed = name.slice(QUALITY_FIELD_PREFIX.length);
+
         setQualities(current => (
             checked ?
-                QUALITIES.filter(quality => quality === name || current.includes(quality)) :
-                current.filter(quality => quality !== name)
+                QUALITIES.filter(quality => quality === changed || current.includes(quality)) :
+                current.filter(quality => quality !== changed)
         ));
     }, []);
 
@@ -173,7 +185,7 @@ export const Component = () => {
                                             key={quality}
                                             control={
                                                 <Checkbox
-                                                    name={`Quality-${quality}`}
+                                                    name={`${QUALITY_FIELD_PREFIX}${quality}`}
                                                     checked={qualities.includes(quality)}
                                                     onChange={onQualityChange}
                                                 />
