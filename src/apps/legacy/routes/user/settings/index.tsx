@@ -203,7 +203,7 @@ const UserSettingsPage: FC = () => {
                                 <span className='material-icons listItemIcon listItemIcon-transparent file_download' aria-hidden='true' />
                                 <div className='listItemBody'>
                                     <div className='listItemBodyText'>
-                                        {globalize.translate('TabDownloads')}
+                                        {globalize.translate('TabOptimisedDownloads')}
                                     </div>
                                 </div>
                             </div>

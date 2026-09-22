@@ -145,7 +145,7 @@ export const Component = () => {
     return (
         <Page
             id='downloadsPage'
-            title={globalize.translate('TabDownloads')}
+            title={globalize.translate('TabOptimisedDownloads')}
             className='type-interior mainAnimatedPage'
         >
             <Box className='content-primary'>
@@ -159,7 +159,7 @@ export const Component = () => {
                                     {globalize.translate('SettingsSaved')}
                                 </Alert>
                             )}
-                            <Typography variant='h1'>{globalize.translate('TabDownloads')}</Typography>
+                            <Typography variant='h1'>{globalize.translate('TabOptimisedDownloads')}</Typography>
                             <Typography>{globalize.translate('HeaderDownloadFoldersHelp')}</Typography>
 
                             <Stack spacing={1}>

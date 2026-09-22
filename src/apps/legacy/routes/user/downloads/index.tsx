@@ -70,23 +70,29 @@ export default function UserDownloadPreferences() {
         <Page
             id='downloadPreferencesPage'
             className='mainAnimatedPage libraryPage userPreferencesPage noSecondaryNavPage'
-            title={globalize.translate('TabDownloads')}
+            title={globalize.translate('TabOptimisedDownloads')}
         >
             <Box className='padded-left padded-right padded-bottom-page padded-top'>
                 <Box className='readOnlyContent' style={{ margin: '0 auto' }}>
                     <form onSubmit={onSubmit}>
                         <Stack spacing={3}>
-                            <Typography variant='h1'>{globalize.translate('TabDownloads')}</Typography>
+                            <Typography variant='h1'>{globalize.translate('TabOptimisedDownloads')}</Typography>
 
                             {isError && (
                                 <Alert severity='error'>{globalize.translate('DownloadsLoadError')}</Alert>
                             )}
 
-                            {!isError && enabled.length === 0 && (
-                                <Alert severity='info'>{globalize.translate('NoDownloadQualitiesForUser')}</Alert>
+                            {/*
+                              * No tiers, or only one, comes to the same thing from here: there is
+                              * no decision for the user to make, so the control is not shown at all
+                              * rather than shown inert. It does not mean downloads are unavailable -
+                              * optimised copies are still served, the server just decides which.
+                              */}
+                            {!isError && !hasChoice && (
+                                <Alert severity='info'>{globalize.translate('DownloadQualityNoChoice')}</Alert>
                             )}
 
-                            {!isError && enabled.length > 0 && (
+                            {!isError && hasChoice && (
                                 <>
                                     {isSaved && (
                                         <Alert severity='success'>{globalize.translate('SettingsSaved')}</Alert>
@@ -101,7 +107,6 @@ export default function UserDownloadPreferences() {
                                             id='downloadQuality'
                                             value={quality}
                                             label={globalize.translate('LabelDownloadQuality')}
-                                            disabled={!hasChoice}
                                             onChange={onQualityChange}
                                         >
                                             <MenuItem value={FOLLOW_DEFAULT}>
@@ -119,19 +124,15 @@ export default function UserDownloadPreferences() {
                                             ))}
                                         </Select>
                                         <FormHelperText>
-                                            {hasChoice ?
-                                                globalize.translate('LabelDownloadQualityHelp') :
-                                                globalize.translate('LabelDownloadQualityOnlyOne')}
+                                            {globalize.translate('LabelDownloadQualityHelp')}
                                         </FormHelperText>
                                     </FormControl>
 
-                                    {hasChoice && (
-                                        <Box>
-                                            <Button type='submit' size='large' disabled={isSaving}>
-                                                {globalize.translate('Save')}
-                                            </Button>
-                                        </Box>
-                                    )}
+                                    <Box>
+                                        <Button type='submit' size='large' disabled={isSaving}>
+                                            {globalize.translate('Save')}
+                                        </Button>
+                                    </Box>
                                 </>
                             )}
                         </Stack>
