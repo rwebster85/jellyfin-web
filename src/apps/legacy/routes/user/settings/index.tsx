@@ -196,11 +196,11 @@ const UserSettingsPage: FC = () => {
                         </LinkButton>
 
                         {/*
-                          * Hidden entirely while the feature is off, rather than leading to a page
-                          * that can only say there is nothing to choose. The tiers are seeded, so a
-                          * server that has never enabled downloads still has some.
+                          * Hidden while the feature is off, and when an admin is viewing another
+                          * user's preferences: the page only reads and sets the signed-in user's
+                          * own tier.
                           */}
-                        {downloadConfig?.Enabled === true && (
+                        {downloadConfig?.Enabled === true && isLoggedInUser && (
                             <LinkButton
                                 href={`#/mypreferencesdownloads?userId=${userId}`}
                                 className='lnkDownloadPreferences listItem-border'
