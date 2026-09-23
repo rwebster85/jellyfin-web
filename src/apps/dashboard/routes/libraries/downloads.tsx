@@ -128,8 +128,7 @@ export const Component = () => {
             // Same rule as an edit, so a missing or disabled default opens with one selected.
             setDefaultTierId(pickDefault(stored, config.DefaultTierId || ''));
             setBehaviour(config.Behaviour || DownloadBehaviour.SeparateAction);
-            // Absent means on, the server's default.
-            setAllowOriginal(config.AllowOriginal !== false);
+            setAllowOriginal(config.AllowOriginal);
         }
     }, [config]);
 
