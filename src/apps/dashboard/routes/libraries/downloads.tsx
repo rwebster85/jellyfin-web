@@ -91,7 +91,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         DefaultTierId: formData.get('DefaultTierId')?.toString() || null,
         Behaviour: formData.get('Behaviour')?.toString() === DownloadBehaviour.Substitute ?
             DownloadBehaviour.Substitute :
-            DownloadBehaviour.SeparateAction
+            DownloadBehaviour.SeparateAction,
+        AllowOriginal: formData.get('AllowOriginal') !== null
     };
 
     await getSystemApi(api)
@@ -120,6 +121,7 @@ export const Component = () => {
     const [tiers, setTiers] = useState<DownloadTier[]>([]);
     const [defaultTierId, setDefaultTierId] = useState('');
     const [behaviour, setBehaviour] = useState<DownloadBehaviour>(DownloadBehaviour.SeparateAction);
+    const [allowOriginal, setAllowOriginal] = useState(true);
 
     useEffect(() => {
         if (config) {
@@ -133,6 +135,9 @@ export const Component = () => {
             // than in a state the page will not let anyone save.
             setDefaultTierId(pickDefault(stored, config.DefaultTierId || ''));
             setBehaviour(config.Behaviour || DownloadBehaviour.SeparateAction);
+            // Absent from a configuration served by a build that predates the option, which is
+            // the server's own default - on.
+            setAllowOriginal(config.AllowOriginal !== false);
         }
     }, [config]);
 
@@ -174,6 +179,10 @@ export const Component = () => {
 
     const onBehaviourChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setBehaviour(event.target.value as DownloadBehaviour);
+    }, []);
+
+    const onAllowOriginalChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setAllowOriginal(event.target.checked);
     }, []);
 
     const onAddTierClick = useCallback(() => {
@@ -486,6 +495,28 @@ export const Component = () => {
                                                 {globalize.translate('DownloadBehaviourSubstituteHelp')}
                                             </Typography>
                                         </RadioGroup>
+
+                                        {/*
+                                          * Only means anything under Substitute: otherwise the plain
+                                          * Download already serves the original. Hidden rather than
+                                          * unmounted, like the section above, so switching
+                                          * behaviour back and forth keeps the stored value.
+                                          */}
+                                        <Box sx={{ display: behaviour === DownloadBehaviour.Substitute ? 'block' : 'none', pl: 4 }}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        name='AllowOriginal'
+                                                        checked={allowOriginal}
+                                                        onChange={onAllowOriginalChange}
+                                                    />
+                                                }
+                                                label={globalize.translate('AllowOriginalDownload')}
+                                            />
+                                            <Typography variant='body2'>
+                                                {globalize.translate('AllowOriginalDownloadHelp')}
+                                            </Typography>
+                                        </Box>
                                     </Stack>
                                 </Stack>
                             </Box>

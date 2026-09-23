@@ -41,6 +41,8 @@ export interface DownloadOptions {
     Tiers: DownloadTier[];
     DefaultTierId?: string | null;
     Behaviour: DownloadBehaviour;
+    /** Whether users may choose the original file instead. Only offered under `Substitute`. */
+    AllowOriginal: boolean;
 }
 
 /**

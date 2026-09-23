@@ -21,9 +21,17 @@ export interface DownloadTierOptions {
     Tiers: DownloadTierInfo[];
     /** What a user who has not chosen gets, or null when the admin has enabled none. */
     DefaultTierId: string | null;
-    /** This user's own choice, or null when they follow the default. */
+    /** Whether the original file is offered alongside the tiers, chosen as `ORIGINAL_TIER_ID`. */
+    OriginalAvailable: boolean;
+    /** This user's own choice - a tier id, `ORIGINAL_TIER_ID`, or null when they follow the default. */
     TierId: string | null;
 }
+
+/**
+ * The choice meaning "give me the original file", stored where a tier id goes. It mirrors the
+ * server's `DownloadTiers.OriginalId`, which no tier is allowed to have.
+ */
+export const ORIGINAL_TIER_ID = 'original';
 
 const fetchDownloadTier = async (api: Api, options?: AxiosRequestConfig) => {
     const response = await api.axiosInstance.get<DownloadTierOptions>(

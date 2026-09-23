@@ -14,7 +14,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
 import { useApi } from 'hooks/useApi';
-import { QUERY_KEY, setDownloadTier, useDownloadTier } from 'hooks/useDownloadTier';
+import { ORIGINAL_TIER_ID, QUERY_KEY, setDownloadTier, useDownloadTier } from 'hooks/useDownloadTier';
 import globalize from 'lib/globalize';
 import { queryClient } from 'utils/query/queryClient';
 
@@ -30,9 +30,13 @@ export default function UserDownloadPreferences() {
 
     useEffect(() => {
         if (options) {
-            // A tier the admin has since turned off is not on the menu, so it cannot be the value.
+            // A tier the admin has since turned off is not on the menu, so it cannot be the value -
+            // and nor can the original, once it is no longer offered.
             const stored = options.TierId;
-            setTierId(stored && options.Tiers.some(tier => tier.Id === stored) ? stored : FOLLOW_DEFAULT);
+            const onMenu = stored === ORIGINAL_TIER_ID ?
+                options.OriginalAvailable :
+                options.Tiers.some(tier => tier.Id === stored);
+            setTierId(stored && onMenu ? stored : FOLLOW_DEFAULT);
         }
     }, [options]);
 
@@ -64,8 +68,10 @@ export default function UserDownloadPreferences() {
     }
 
     const tiers = options?.Tiers ?? [];
-    // Nothing to choose between: one tier is the same as no tier from the user's side.
-    const hasChoice = tiers.length > 1;
+    const originalAvailable = options?.OriginalAvailable === true;
+    // Nothing to choose between: one tier is the same as no tier from the user's side. The original
+    // is a choice of its own, though - even with no tiers at all it opts out of the single-file one.
+    const hasChoice = tiers.length > 1 || originalAvailable;
     const defaultTier = tiers.find(tier => tier.Id === options?.DefaultTierId);
 
     return (
@@ -129,6 +135,20 @@ export default function UserDownloadPreferences() {
                                                     />
                                                 </MenuItem>
                                             ))}
+                                            {/*
+                                              * Last, although it is the largest: the list reads as
+                                              * a set of optimised sizes followed by the way out of
+                                              * them, and it is never the default, so its position
+                                              * cannot make it one.
+                                              */}
+                                            {originalAvailable && (
+                                                <MenuItem value={ORIGINAL_TIER_ID}>
+                                                    <ListItemText
+                                                        primary={globalize.translate('DownloadTierOriginal')}
+                                                        secondary={globalize.translate('DownloadTierOriginalHelp')}
+                                                    />
+                                                </MenuItem>
+                                            )}
                                         </Select>
                                         <FormHelperText>
                                             {globalize.translate('LabelDownloadTierHelp')}
