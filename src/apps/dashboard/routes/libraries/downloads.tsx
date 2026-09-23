@@ -127,7 +127,9 @@ export const Component = () => {
         if (config) {
             setEnabled(config.Enabled === true);
             setLocations(config.Locations || []);
-            const stored = config.Tiers ?? [];
+            // Rows are keyed and edited by id, so a tier written into the file by hand without one
+            // gets one here. The server would assign it on save anyway.
+            const stored = (config.Tiers ?? []).map(tier => (tier.Id ? tier : { ...tier, Id: newTierId() }));
 
             setTiers(stored);
             // Run the stored default through the same rule an edit would, so a configuration whose
