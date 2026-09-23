@@ -5,9 +5,8 @@ import { QUERY_KEY } from 'hooks/useNamedConfiguration';
 import { queryClient } from 'utils/query/queryClient';
 
 /**
- * The server's named configuration holding the download settings. It is also the name of the file
- * the server stores them in - `optimised-downloads.xml` - and the last segment of
- * `/System/Configuration/{key}`, so it has to match `DownloadConfigurationStore.StoreKey` exactly.
+ * The server's named configuration key: the file name (`optimised-downloads.xml`) and the route
+ * segment. Must match the server's `DownloadConfigurationStore.StoreKey`.
  */
 export const DOWNLOAD_CONFIG_KEY = 'optimised-downloads';
 
@@ -22,7 +21,7 @@ export enum DownloadBehaviour {
     Substitute = 'Substitute'
 }
 
-/** A quality tier, mirroring the server's `DownloadTier`. */
+/** A download tier, mirroring the server's `DownloadTier`. */
 export interface DownloadTier {
     /** What a user's stored choice and `DefaultTierId` point at. Empty on a tier not yet saved. */
     Id: string;
@@ -46,13 +45,8 @@ export interface DownloadOptions {
 }
 
 /**
- * Reads the download settings outside of a React component.
- *
- * Goes through queryClient under the same query key `useNamedConfiguration` uses, so it shares that
- * hook's cache entry and the invalidation the dashboard page fires on save - which means the context
- * menu reflects a settings change without a reload, and without a request per menu opening. The key
- * is what ties the two together, so the request itself is made here rather than reaching into the
- * hook for it.
+ * Reads the download settings outside of a React component. Uses `useNamedConfiguration`'s query key,
+ * so it shares that hook's cache and sees the dashboard's saves without a reload.
  *
  * @param api The Api client.
  * @returns The settings, or `null` when they cannot be read.
@@ -65,8 +59,7 @@ export async function getDownloadSettings(api: Api): Promise<DownloadOptions | n
                 const response = await getSystemApi(api)
                     .getNamedConfiguration({ key: DOWNLOAD_CONFIG_KEY }, { signal });
 
-                // The generated client types a named configuration as File, since the endpoint is
-                // declared as returning an opaque document.
+                // The generated client types a named configuration as File.
                 return response.data as unknown as DownloadOptions;
             }
         });

@@ -43,19 +43,14 @@ import { queryClient } from 'utils/query/queryClient';
 const CONFIG_KEY = DOWNLOAD_CONFIG_KEY;
 
 /**
- * Ids are generated here rather than left to the server so that a tier can be made the default in
- * the same edit that creates it.
- *
- * `crypto.randomUUID` is deliberately not used: it needs a secure context, and plenty of servers are
- * reached over plain HTTP. `getRandomValues` has no such restriction. The format matches the ids the
- * server generates - 32 hex characters, no dashes.
+ * Generates a tier id in the server's format (32 hex characters), so a new tier can be made the
+ * default before it is saved. Not `crypto.randomUUID`, which needs HTTPS.
  *
  * @returns A new tier id.
  */
 function newTierId(): string {
     const bytes = new Uint8Array(16);
-    // The compat plugin's browser floor predates the dashboard's; getRandomValues has been in every
-    // browser this page loads in for well over a decade.
+    // Available in every browser the dashboard supports.
     /* eslint-disable-next-line compat/compat */
     crypto.getRandomValues(bytes);
 
@@ -63,9 +58,8 @@ function newTierId(): string {
 }
 
 /**
- * Keeps the default pointing at a tier users can actually be given - the server refuses to store one
- * that does not. Disabling or deleting the default tier moves it to the first enabled one, rather
- * than blocking a save over something the administrator has already said.
+ * Keeps the default on an enabled tier, which the server requires: disabling or deleting the default
+ * moves it to the first enabled one.
  *
  * @param tiers The tiers as they now stand.
  * @param current The default tier's id before this edit.
@@ -127,26 +121,21 @@ export const Component = () => {
         if (config) {
             setEnabled(config.Enabled === true);
             setLocations(config.Locations || []);
-            // Rows are keyed and edited by id, so a tier written into the file by hand without one
-            // gets one here. The server would assign it on save anyway.
+            // Rows are keyed by id, so a hand-written tier without one gets one here.
             const stored = (config.Tiers ?? []).map(tier => (tier.Id ? tier : { ...tier, Id: newTierId() }));
 
             setTiers(stored);
-            // Run the stored default through the same rule an edit would, so a configuration whose
-            // default is missing or points at a disabled tier opens with a button selected rather
-            // than in a state the page will not let anyone save.
+            // Same rule as an edit, so a missing or disabled default opens with one selected.
             setDefaultTierId(pickDefault(stored, config.DefaultTierId || ''));
             setBehaviour(config.Behaviour || DownloadBehaviour.SeparateAction);
-            // Absent from a configuration served by a build that predates the option, which is
-            // the server's own default - on.
+            // Absent means on, the server's default.
             setAllowOriginal(config.AllowOriginal !== false);
         }
     }, [config]);
 
     const hasEnabledTier = useMemo(() => tiers.some(tier => tier.Enabled), [tiers]);
 
-    // Every edit to the table goes through here, so that the default is never left naming a tier
-    // that has just been disabled or deleted.
+    // Every table edit goes through here, so the default never names a disabled or deleted tier.
     const updateTiers = useCallback((update: (current: DownloadTier[]) => DownloadTier[]) => {
         const next = update(tiers);
 
@@ -197,8 +186,7 @@ export const Component = () => {
         }]);
     }, [updateTiers]);
 
-    // The field name carries the tier's id and which field it is, since one handler serves every
-    // text box in the table.
+    // One handler for every text box: the field name is "<tier id>|<field>".
     const onTierFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const [id, field] = event.target.name.split('|');
         const { value } = event.target;
@@ -244,10 +232,7 @@ export const Component = () => {
         });
     }, [updateTiers]);
 
-    /**
-     * The two things the server refuses outright, caught here so the page can name the problem
-     * rather than turning a save into a failed request.
-     */
+    /** What the server would refuse, caught here so the page can say what is wrong. */
     const tierError = useMemo(() => {
         const suffixes = tiers.map(tier => tier.Suffix.trim().toLowerCase());
 
@@ -259,8 +244,7 @@ export const Component = () => {
             return globalize.translate('DownloadTierSuffixDuplicate');
         }
 
-        // Only meaningful while there is something to be default. An administrator who has turned
-        // every tier off, or deleted them all, has nothing to pick and saves freely.
+        // With no tier enabled there is nothing to be default.
         if (tiers.some(tier => tier.Enabled) && !defaultTierId) {
             return globalize.translate('DownloadTierDefaultRequired');
         }
@@ -499,10 +483,8 @@ export const Component = () => {
                                         </RadioGroup>
 
                                         {/*
-                                          * Only means anything under Substitute: otherwise the plain
-                                          * Download already serves the original. Hidden rather than
-                                          * unmounted, like the section above, so switching
-                                          * behaviour back and forth keeps the stored value.
+                                          * Only under Substitute - otherwise Download already serves
+                                          * the original. Hidden rather than unmounted, to keep the value.
                                           */}
                                         <Box sx={{ display: behaviour === DownloadBehaviour.Substitute ? 'block' : 'none', pl: 4 }}>
                                             <FormControlLabel

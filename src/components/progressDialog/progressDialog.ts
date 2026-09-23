@@ -38,7 +38,7 @@ export function show(text: string): ProgressDialog {
         removeOnClose: true,
         scrollY: false,
         autoFocus: false,
-        // The dialog is closed by the caller, not by the user, so it has no business in the history.
+        // Closed by the caller, not the user, so kept out of the history.
         enableHistory: false
     };
 

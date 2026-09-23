@@ -27,8 +27,7 @@ const UserSettingsPage: FC = () => {
         isPending: isQuickConnectEnabledPending
     } = useQuickConnectEnabled();
     const { data: users } = useUsers();
-    // The named configuration is readable by any signed-in user, and shares a cache entry with the
-    // item context menu's own read of it.
+    // Readable by any signed-in user; shares its cache entry with the item context menu.
     const { data: downloadConfig } = useNamedConfiguration<DownloadOptions>(DOWNLOAD_CONFIG_KEY);
     const [ user, setUser ] = useState<UserDto>();
 

@@ -80,8 +80,7 @@ export async function downloadOptimised(api: Api, item: BaseItemDto) {
             title: item.Name,
             // The optimised file is named after itself, not after the item's own file.
             filename: getFileName(optimised.Path) || getFileName(item.Path),
-            // A shell that ignores the url above and builds its own from the item id needs telling
-            // which version was asked for. A browser uses the url and ignores this.
+            // For a shell that builds its own URL from the item id; a browser ignores it.
             optimised: true
         }]);
 
@@ -99,8 +98,7 @@ export async function downloadOptimised(api: Api, item: BaseItemDto) {
         return;
     }
 
-    // Deliberately no `optimised` flag here: the user has just agreed to the item's own file, so a
-    // shell that builds its own url must fetch that rather than trying the optimised route again.
+    // No `optimised` flag: the user has just agreed to the item's own file.
     download([{
         url: getLibraryApi(api).getDownloadUrl({ itemId }),
         item,

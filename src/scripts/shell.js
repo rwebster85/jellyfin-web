@@ -65,10 +65,8 @@ export default {
         return false;
     },
     /**
-     * Whether a download will use the URL it is given.
-     *
-     * A NativeShell may build its own URL from the item id and ignore the one passed to it - the
-     * Android client does - so a download of anything but the item's own file cannot be honoured there.
+     * Whether a download will use the URL it is given. A NativeShell such as the Android app builds its
+     * own from the item id instead.
      *
      * @returns true when a download URL other than the item's own will be used
      */

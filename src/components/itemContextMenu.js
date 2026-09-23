@@ -201,18 +201,12 @@ export async function getCommands(options) {
                 icon: 'file_download'
             });
 
-            // Read inside this branch so that a server with no interest in downloads is never asked.
-            // It is cached and shared with the dashboard page, so this is not a request per menu.
+            // Cached and shared with the dashboard page, so not a request per menu.
             const downloadSettings = await getDownloadSettings(ServerConnections.getApi(item.ServerId));
 
-            // Two conditions, and they ask different things.
-            //
-            // Does the admin want a separate action at all? Under Substitute the plain Download
-            // button already serves the optimised copy.
-            //
-            // And can this client actually honour it? A shell that builds its own download URL can
-            // only reach the optimised file if it understands the flag we send; older builds ignore
-            // it and quietly return the original.
+            // Offered only when the admin wants a separate action, and this client can honour it: a
+            // shell that builds its own download URL must understand the optimised flag, or it would
+            // quietly fetch the original.
             const offersOptimised = offersSeparateOptimisedAction(downloadSettings)
                 && (shell.supportsDownloadUrl() || appHost.supports(AppFeature.OptimisedDownload));
 

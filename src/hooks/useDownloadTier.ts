@@ -27,10 +27,7 @@ export interface DownloadTierOptions {
     TierId: string | null;
 }
 
-/**
- * The choice meaning "give me the original file", stored where a tier id goes. It mirrors the
- * server's `DownloadTiers.OriginalId`, which no tier is allowed to have.
- */
+/** The choice meaning "the original file". Mirrors the server's `DownloadTiers.OriginalId`. */
 export const ORIGINAL_TIER_ID = 'original';
 
 const fetchDownloadTier = async (api: Api, options?: AxiosRequestConfig) => {

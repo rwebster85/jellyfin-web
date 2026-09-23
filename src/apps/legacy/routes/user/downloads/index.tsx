@@ -30,8 +30,8 @@ export default function UserDownloadPreferences() {
 
     useEffect(() => {
         if (options) {
-            // A tier the admin has since turned off is not on the menu, so it cannot be the value -
-            // and nor can the original, once it is no longer offered.
+            // A stored choice that is not on the menu - a disabled tier, or Original when it is not
+            // offered - shows as the default.
             const stored = options.TierId;
             const onMenu = stored === ORIGINAL_TIER_ID ?
                 options.OriginalAvailable :
@@ -69,8 +69,7 @@ export default function UserDownloadPreferences() {
 
     const tiers = options?.Tiers ?? [];
     const originalAvailable = options?.OriginalAvailable === true;
-    // Nothing to choose between: one tier is the same as no tier from the user's side. The original
-    // is a choice of its own, though - even with no tiers at all it opts out of the single-file one.
+    // One tier is no choice at all; Original is a choice even with no tiers.
     const hasChoice = tiers.length > 1 || originalAvailable;
     const defaultTier = tiers.find(tier => tier.Id === options?.DefaultTierId);
 
@@ -91,10 +90,8 @@ export default function UserDownloadPreferences() {
                             )}
 
                             {/*
-                              * No tiers, or only one, comes to the same thing from here: there is
-                              * no decision for the user to make, so the control is not shown at all
-                              * rather than shown inert. It does not mean downloads are unavailable -
-                              * optimised copies are still served, the server just decides which.
+                              * Nothing to decide, so no control. Optimised copies are still
+                              * served - the server just decides which.
                               */}
                             {!isError && !hasChoice && (
                                 <Alert severity='info'>{globalize.translate('DownloadTierNoChoice')}</Alert>
@@ -122,11 +119,7 @@ export default function UserDownloadPreferences() {
                                                     globalize.translate('DownloadTierServerDefault', defaultTier.Name) :
                                                     globalize.translate('DownloadTierServerDefaultUnset')}
                                             </MenuItem>
-                                            {/*
-                                              * Names and descriptions are the administrator's own
-                                              * words, so they are rendered as given rather than
-                                              * looked up - there is no string to translate.
-                                              */}
+                                            {/* Admin-supplied, so shown as given, not translated. */}
                                             {tiers.map(tier => (
                                                 <MenuItem key={tier.Id} value={tier.Id}>
                                                     <ListItemText
@@ -135,12 +128,7 @@ export default function UserDownloadPreferences() {
                                                     />
                                                 </MenuItem>
                                             ))}
-                                            {/*
-                                              * Last, although it is the largest: the list reads as
-                                              * a set of optimised sizes followed by the way out of
-                                              * them, and it is never the default, so its position
-                                              * cannot make it one.
-                                              */}
+                                            {/* Last: the optimised sizes, then the way out of them. */}
                                             {originalAvailable && (
                                                 <MenuItem value={ORIGINAL_TIER_ID}>
                                                     <ListItemText
