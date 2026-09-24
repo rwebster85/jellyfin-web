@@ -7,7 +7,7 @@ import globalize from 'lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import { queryClient } from 'utils/query/queryClient';
 
-import { offersSeparateOptimisedAction } from './downloadSettings';
+import { canHaveOptimisedCopy, offersSeparateOptimisedAction } from './downloadSettings';
 import shell from './shell';
 
 /** The item context menu's id for Optimised Download. */
@@ -15,13 +15,17 @@ export const OPTIMISED_DOWNLOAD_COMMAND_ID = 'optimiseddownload';
 
 /**
  * The Optimised Download entry for an item's context menu, or `null` when it should not be offered:
- * the admin has not chosen a separate action, or this client cannot honour it - a shell that builds
- * its own download URL must understand the optimised flag, or it would quietly fetch the original.
+ * the item is not a video (optimised copies only exist for video), the admin has not chosen a
+ * separate action, or this client cannot honour it - a shell that builds its own download URL must
+ * understand the optimised flag, or it would quietly fetch the original.
  *
  * @param item The item the menu is for.
  * @returns The menu command, or `null`.
  */
 export async function getOptimisedDownloadCommand(item: BaseItemDto) {
+    // Checked first, so music and books never cost a request.
+    if (!canHaveOptimisedCopy(item)) return null;
+
     const api = ServerConnections.getApi(item.ServerId ?? undefined);
     if (!api) return null;
 

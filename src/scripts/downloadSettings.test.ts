@@ -1,8 +1,22 @@
+import { MediaType } from '@jellyfin/sdk/lib/generated-client/models/media-type';
 import { describe, expect, it } from 'vitest';
 
-import { DownloadBehaviour, offersSeparateOptimisedAction } from './downloadSettings';
+import { canHaveOptimisedCopy, DownloadBehaviour, offersSeparateOptimisedAction } from './downloadSettings';
 
 describe('Scripts: downloadSettings', () => {
+    describe('Method: canHaveOptimisedCopy', () => {
+        it('should allow video - films and episodes alike', () => {
+            expect(canHaveOptimisedCopy({ MediaType: MediaType.Video })).toBe(true);
+        });
+
+        it.each([MediaType.Audio, MediaType.Book, MediaType.Photo, MediaType.Unknown, undefined])(
+            'should not allow %s',
+            mediaType => {
+                expect(canHaveOptimisedCopy({ MediaType: mediaType })).toBe(false);
+            }
+        );
+    });
+
     describe('Method: offersSeparateOptimisedAction', () => {
         it('should offer the action when the feature is on and the behaviour is SeparateAction', () => {
             expect(offersSeparateOptimisedAction({ Enabled: true, Behaviour: DownloadBehaviour.SeparateAction })).toBe(true);

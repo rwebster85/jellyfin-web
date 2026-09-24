@@ -1,3 +1,6 @@
+import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
+import { MediaType } from '@jellyfin/sdk/lib/generated-client/models/media-type';
+
 /**
  * The server's named configuration key: the file name (`optimised-downloads.xml`) and the route
  * segment. Must match the server's `DownloadConfigurationStore.StoreKey`.
@@ -36,6 +39,17 @@ export interface DownloadOptions {
     Behaviour: DownloadBehaviour;
     /** Whether users may choose the original file instead. Only offered under `Substitute`. */
     AllowOriginal: boolean;
+}
+
+/**
+ * Whether an item can have an optimised copy at all. Only video can - films and episodes - so there
+ * is no point offering Optimised Download on music, books or photos.
+ *
+ * @param item The item.
+ * @returns `true` for a video item.
+ */
+export function canHaveOptimisedCopy(item: Pick<BaseItemDto, 'MediaType'>): boolean {
+    return item.MediaType === MediaType.Video;
 }
 
 /**
