@@ -23,9 +23,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { findTierProblem, newTierId, pickDefault } from 'apps/dashboard/features/libraries/utils/downloadTiers';
 import DirectoryBrowser from 'components/directorybrowser/directorybrowser';
 import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
+import { QUERY_KEY as DOWNLOAD_BEHAVIOUR_QUERY_KEY } from 'hooks/useDownloadBehaviour';
 import { QUERY_KEY, useNamedConfiguration } from 'hooks/useNamedConfiguration';
 import globalize from 'lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
@@ -41,35 +43,6 @@ import { ActionData } from 'types/actionData';
 import { queryClient } from 'utils/query/queryClient';
 
 const CONFIG_KEY = DOWNLOAD_CONFIG_KEY;
-
-/**
- * Generates a tier id in the server's format (32 hex characters), so a new tier can be made the
- * default before it is saved. Not `crypto.randomUUID`, which needs HTTPS.
- *
- * @returns A new tier id.
- */
-function newTierId(): string {
-    const bytes = new Uint8Array(16);
-    // Available in every browser the dashboard supports.
-    /* eslint-disable-next-line compat/compat */
-    crypto.getRandomValues(bytes);
-
-    return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Keeps the default on an enabled tier, which the server requires: disabling or deleting the default
- * moves it to the first enabled one.
- *
- * @param tiers The tiers as they now stand.
- * @param current The default tier's id before this edit.
- * @returns The default tier's id after it.
- */
-function pickDefault(tiers: DownloadTier[], current: string): string {
-    return tiers.some(tier => tier.Enabled && tier.Id === current) ?
-        current :
-        tiers.find(tier => tier.Enabled)?.Id || '';
-}
 
 export const action = async ({ request }: ActionFunctionArgs) => {
     const api = ServerConnections.getApi();
@@ -94,6 +67,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     void queryClient.invalidateQueries({
         queryKey: [QUERY_KEY, CONFIG_KEY]
+    });
+    // The item context menu reads the behaviour through its own query.
+    void queryClient.invalidateQueries({
+        queryKey: [DOWNLOAD_BEHAVIOUR_QUERY_KEY]
     });
 
     return {
@@ -233,22 +210,9 @@ export const Component = () => {
 
     /** What the server would refuse, caught here so the page can say what is wrong. */
     const tierError = useMemo(() => {
-        const suffixes = tiers.map(tier => tier.Suffix.trim().toLowerCase());
+        const problem = findTierProblem(tiers, defaultTierId);
 
-        if (suffixes.some(suffix => suffix.length === 0)) {
-            return globalize.translate('DownloadTierSuffixRequired');
-        }
-
-        if (new Set(suffixes).size !== suffixes.length) {
-            return globalize.translate('DownloadTierSuffixDuplicate');
-        }
-
-        // With no tier enabled there is nothing to be default.
-        if (tiers.some(tier => tier.Enabled) && !defaultTierId) {
-            return globalize.translate('DownloadTierDefaultRequired');
-        }
-
-        return null;
+        return problem ? globalize.translate(problem) : null;
     }, [tiers, defaultTierId]);
 
     if (isConfigPending) {

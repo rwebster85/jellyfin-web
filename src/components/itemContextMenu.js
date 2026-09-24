@@ -6,8 +6,7 @@ import { ServerConnections } from 'lib/jellyfin-apiclient';
 
 import browser from '../scripts/browser';
 import { copy } from '../scripts/clipboard';
-import { getDownloadSettings, offersSeparateOptimisedAction } from '../scripts/downloadSettings';
-import shell from '../scripts/shell';
+import { getOptimisedDownloadCommand, OPTIMISED_DOWNLOAD_COMMAND_ID, runOptimisedDownload } from '../scripts/optimisedDownloadCommand';
 import dom from '../utils/dom';
 import globalize from '../lib/globalize';
 import actionsheet from './actionSheet/actionSheet';
@@ -201,22 +200,8 @@ export async function getCommands(options) {
                 icon: 'file_download'
             });
 
-            // Cached and shared with the dashboard page, so not a request per menu.
-            const downloadSettings = await getDownloadSettings(ServerConnections.getApi(item.ServerId));
-
-            // Offered only when the admin wants a separate action, and this client can honour it: a
-            // shell that builds its own download URL must understand the optimised flag, or it would
-            // quietly fetch the original.
-            const offersOptimised = offersSeparateOptimisedAction(downloadSettings)
-                && (shell.supportsDownloadUrl() || appHost.supports(AppFeature.OptimisedDownload));
-
-            if (offersOptimised) {
-                commands.push({
-                    name: globalize.translate('OptimisedDownload'),
-                    id: 'optimiseddownload',
-                    icon: 'file_download'
-                });
-            }
+            const optimisedDownload = await getOptimisedDownloadCommand(item);
+            if (optimisedDownload) commands.push(optimisedDownload);
 
             commands.push({
                 name: globalize.translate('CopyStreamURL'),
@@ -445,14 +430,8 @@ function executeCommand(item, id, options) {
                     getResolveFunction(getResolveFunction(resolve, id), id)();
                 });
                 break;
-            case 'optimiseddownload':
-                import('../scripts/optimisedDownloader').then(({ downloadOptimised }) => {
-                    return downloadOptimised(api, item);
-                }).catch(err => {
-                    console.error('[itemContextMenu] error downloading the optimised file', err);
-                }).finally(() => {
-                    getResolveFunction(resolve, id)();
-                });
+            case OPTIMISED_DOWNLOAD_COMMAND_ID:
+                runOptimisedDownload(item).finally(getResolveFunction(resolve, id));
                 break;
             case 'downloadall': {
                 const downloadItems = items => {

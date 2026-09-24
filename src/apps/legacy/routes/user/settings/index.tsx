@@ -2,6 +2,7 @@ import type { UserDto } from '@jellyfin/sdk/lib/generated-client/models/user-dto
 import React, { useEffect, useMemo, useState, type FC } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import DownloadPreferencesLink from 'apps/legacy/features/downloads/components/DownloadPreferencesLink';
 import { appHost } from 'components/apphost';
 import layoutManager from 'components/layoutManager';
 import Loading from 'components/loading/LoadingComponent';
@@ -9,12 +10,10 @@ import Page from 'components/Page';
 import { AppFeature } from 'constants/appFeature';
 import LinkButton from 'elements/emby-button/LinkButton';
 import { useApi } from 'hooks/useApi';
-import { useNamedConfiguration } from 'hooks/useNamedConfiguration';
 import { useQuickConnectEnabled } from 'hooks/useQuickConnect';
 import { useUsers } from 'hooks/useUsers';
 import globalize from 'lib/globalize';
 import browser from 'scripts/browser';
-import { DOWNLOAD_CONFIG_KEY, type DownloadOptions } from 'scripts/downloadSettings';
 import Dashboard from 'utils/dashboard';
 import shell from 'scripts/shell';
 import keyboardNavigation from 'scripts/keyboardNavigation';
@@ -27,8 +26,6 @@ const UserSettingsPage: FC = () => {
         isPending: isQuickConnectEnabledPending
     } = useQuickConnectEnabled();
     const { data: users } = useUsers();
-    // Readable by any signed-in user; shares its cache entry with the item context menu.
-    const { data: downloadConfig } = useNamedConfiguration<DownloadOptions>(DOWNLOAD_CONFIG_KEY);
     const [ user, setUser ] = useState<UserDto>();
 
     const userId = useMemo(() => (
@@ -194,31 +191,7 @@ const UserSettingsPage: FC = () => {
                             </div>
                         </LinkButton>
 
-                        {/*
-                          * Hidden while the feature is off, and when an admin is viewing another
-                          * user's preferences: the page only reads and sets the signed-in user's
-                          * own tier.
-                          */}
-                        {downloadConfig?.Enabled === true && isLoggedInUser && (
-                            <LinkButton
-                                href={`#/mypreferencesdownloads?userId=${userId}`}
-                                className='lnkDownloadPreferences listItem-border'
-                                style={{
-                                    display: 'block',
-                                    margin: 0,
-                                    padding: 0
-                                }}
-                            >
-                                <div className='listItem'>
-                                    <span className='material-icons listItemIcon listItemIcon-transparent file_download' aria-hidden='true' />
-                                    <div className='listItemBody'>
-                                        <div className='listItemBodyText'>
-                                            {globalize.translate('TabOptimisedDownloads')}
-                                        </div>
-                                    </div>
-                                </div>
-                            </LinkButton>
-                        )}
+                        <DownloadPreferencesLink userId={userId} />
 
                         {appHost.supports(AppFeature.DownloadManagement) && (
                             <LinkButton
