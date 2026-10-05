@@ -77,13 +77,13 @@ export default function UserDownloadPreferences() {
         <Page
             id='downloadPreferencesPage'
             className='mainAnimatedPage libraryPage userPreferencesPage noSecondaryNavPage'
-            title={globalize.translate('TabOptimisedDownloads')}
+            title={globalize.translate('TabDownloads')}
         >
             <Box className='padded-left padded-right padded-bottom-page padded-top'>
                 <Box className='readOnlyContent' style={{ margin: '0 auto' }}>
                     <form onSubmit={onSubmit}>
                         <Stack spacing={3}>
-                            <Typography variant='h1'>{globalize.translate('TabOptimisedDownloads')}</Typography>
+                            <Typography variant='h1'>{globalize.translate('TabDownloads')}</Typography>
 
                             {isError && (
                                 <Alert severity='error'>{globalize.translate('DownloadsLoadError')}</Alert>
