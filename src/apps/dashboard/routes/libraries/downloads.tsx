@@ -9,9 +9,6 @@ import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import Stack from '@mui/material/Stack';
@@ -24,7 +21,6 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { findTierProblem, newTierId, pickDefault } from 'apps/dashboard/features/libraries/utils/downloadTiers';
-import DirectoryBrowser from 'components/directorybrowser/directorybrowser';
 import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
 import { QUERY_KEY as DOWNLOAD_BEHAVIOUR_QUERY_KEY } from 'hooks/useDownloadBehaviour';
@@ -53,7 +49,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const newConfig: DownloadOptions = {
         Enabled: formData.get('Enabled') !== null,
-        Locations: (formData.get('Locations')?.toString() || '').split('\n').filter(location => location.length > 0),
         Tiers: tiers,
         DefaultTierId: formData.get('DefaultTierId')?.toString() || null,
         Behaviour: formData.get('Behaviour')?.toString() === DownloadBehaviour.Substitute ?
@@ -88,7 +83,6 @@ export const Component = () => {
     const actionData = useActionData() as ActionData | undefined;
     const isSubmitting = navigation.state === 'submitting';
     const [enabled, setEnabled] = useState(false);
-    const [locations, setLocations] = useState<string[]>([]);
     const [tiers, setTiers] = useState<DownloadTier[]>([]);
     const [defaultTierId, setDefaultTierId] = useState('');
     const [behaviour, setBehaviour] = useState<DownloadBehaviour>(DownloadBehaviour.SeparateAction);
@@ -97,7 +91,6 @@ export const Component = () => {
     useEffect(() => {
         if (config) {
             setEnabled(config.Enabled === true);
-            setLocations(config.Locations || []);
             // Rows are keyed by id, so a hand-written tier without one gets one here.
             const stored = (config.Tiers ?? []).map(tier => (tier.Id ? tier : { ...tier, Id: newTierId() }));
 
@@ -118,27 +111,6 @@ export const Component = () => {
         setTiers(next);
         setDefaultTierId(pickDefault(next, defaultTierId));
     }, [tiers, defaultTierId]);
-
-    const onAddClick = useCallback(() => {
-        const picker = new DirectoryBrowser();
-
-        picker.show({
-            includeDirectories: true,
-            header: globalize.translate('HeaderSelectPath'),
-            callback: function (path: string) {
-                if (path) {
-                    setLocations(current => current.includes(path) ? current : [...current, path]);
-                }
-
-                picker.close();
-            }
-        });
-    }, []);
-
-    const onRemoveClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-        const path = event.currentTarget.dataset.path;
-        setLocations(current => current.filter(location => location !== path));
-    }, []);
 
     const onEnabledChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setEnabled(event.target.checked);
@@ -237,7 +209,6 @@ export const Component = () => {
                                 </Alert>
                             )}
                             <Typography variant='h1'>{globalize.translate('TabDownloads')}</Typography>
-                            <Typography>{globalize.translate('HeaderDownloadFoldersHelp')}</Typography>
 
                             <Stack spacing={1}>
                                 <FormControlLabel
@@ -258,38 +229,6 @@ export const Component = () => {
                               */}
                             <Box sx={{ display: enabled ? 'block' : 'none' }}>
                                 <Stack spacing={3}>
-                                    <Stack spacing={1}>
-                                        <Typography variant='h2'>{globalize.translate('HeaderDownloadFolders')}</Typography>
-                                        {locations.length > 0 ? (
-                                            <List disablePadding>
-                                                {locations.map(location => (
-                                                    <ListItem
-                                                        key={location}
-                                                        disableGutters
-                                                        secondaryAction={
-                                                            <IconButton
-                                                                data-path={location}
-                                                                title={globalize.translate('ButtonRemove')}
-                                                                onClick={onRemoveClick}
-                                                            >
-                                                                <Delete />
-                                                            </IconButton>
-                                                        }
-                                                    >
-                                                        <ListItemText primary={location} />
-                                                    </ListItem>
-                                                ))}
-                                            </List>
-                                        ) : (
-                                            <Typography>{globalize.translate('NoDownloadFolders')}</Typography>
-                                        )}
-                                        <Box>
-                                            <Button variant='outlined' onClick={onAddClick}>
-                                                {globalize.translate('Add')}
-                                            </Button>
-                                        </Box>
-                                    </Stack>
-
                                     <Stack spacing={1}>
                                         <Typography variant='h2'>{globalize.translate('HeaderDownloadTiers')}</Typography>
                                         <Typography>{globalize.translate('HeaderDownloadTiersHelp')}</Typography>
@@ -468,7 +407,6 @@ export const Component = () => {
                                 </Stack>
                             </Box>
 
-                            <input type='hidden' readOnly name='Locations' value={locations.join('\n')} />
                             <input type='hidden' readOnly name='Tiers' value={JSON.stringify(tiers)} />
                             <input type='hidden' readOnly name='DefaultTierId' value={defaultTierId} />
 

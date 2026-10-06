@@ -33,7 +33,6 @@ export interface DownloadTier {
 /** The download settings, mirroring the server's `DownloadOptions`. */
 export interface DownloadOptions {
     Enabled: boolean;
-    Locations: string[];
     Tiers: DownloadTier[];
     DefaultTierId?: string | null;
     Behaviour: DownloadBehaviour;
