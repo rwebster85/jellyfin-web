@@ -2,10 +2,10 @@ import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base
 import { MediaType } from '@jellyfin/sdk/lib/generated-client/models/media-type';
 
 /**
- * The server's named configuration key: the file name (`optimised-downloads.xml`) and the route
+ * The server's named configuration key: the file name (`downloads.xml`) and the route
  * segment. Must match the server's `DownloadConfigurationStore.StoreKey`.
  */
-export const DOWNLOAD_CONFIG_KEY = 'optimised-downloads';
+export const DOWNLOAD_CONFIG_KEY = 'downloads';
 
 /**
  * Which download behaviour the server offers, mirroring the server's `DownloadBehaviour` enum.
